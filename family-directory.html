@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Directory</title>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: white;
+}
+
+/* LOGIN */
+.login {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-box {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(20px);
+  padding: 30px;
+  border-radius: 20px;
+  width: 300px;
+  text-align: center;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 15px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 15px;
+  border: none;
+  border-radius: 10px;
+  background: #3b82f6;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* APP */
+.app {
+  display: none;
+  padding: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.search {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  margin-bottom: 20px;
+}
+
+/* GRID */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+/* CARD */
+.card {
+  background: rgba(255,255,255,0.05);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: 0.3s;
+  cursor: pointer;
+}
+
+.card:hover {
+  transform: translateY(-8px) scale(1.02);
+}
+
+.card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.card-body {
+  padding: 15px;
+}
+
+.card-body h3 {
+  margin-bottom: 5px;
+}
+
+.small {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+/* MODAL */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 20px;
+  width: 300px;
+  text-align: center;
+}
+
+.modal img {
+  width: 100%;
+  border-radius: 15px;
+  margin-bottom: 10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- LOGIN -->
+
+<div class="login" id="loginPage">
+  <div class="login-box">
+    <h2>Family Access</h2>
+    <input type="password" id="password" placeholder="Enter Password">
+    <button onclick="login()">Login</button>
+  </div>
+</div>
+
+<!-- APP -->
+
+<div class="app" id="appPage">
+  <div class="header">
+    <h2>Family Directory</h2>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <input type="text" class="search" placeholder="Search family..." onkeyup="searchMembers()" id="searchBox">
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<!-- MODAL -->
+
+<div class="modal" id="modal">
+  <div class="modal-content" id="modalContent"></div>
+</div>
+
+<script>
+
+// 🔐 PASSWORD
+const PASSWORD = "1234";
+
+// 📇 FAMILY DATA
+const members = [
+  {
+    name: "Nivin Varkey",
+    phone: "+971XXXXXXXX",
+    address: "Dubai",
+    relation: "Self",
+    photo: "https://via.placeholder.com/400"
+  },
+  {
+    name: "Anu Joseph",
+    phone: "+971111111",
+    address: "Abu Dhabi",
+    relation: "Cousin",
+    photo: "https://via.placeholder.com/400"
+  },
+  {
+    name: "Mathew Varkey",
+    phone: "+971222222",
+    address: "Sharjah",
+    relation: "Father",
+    photo: "https://via.placeholder.com/400"
+  }
+];
+
+// LOGIN
+function login() {
+  const pass = document.getElementById("password").value;
+  if (pass === PASSWORD) {
+    document.getElementById("loginPage").style.display = "none";
+    document.getElementById("appPage").style.display = "block";
+    displayMembers(members);
+  } else {
+    alert("Wrong password");
+  }
+}
+
+// LOGOUT
+function logout() {
+  location.reload();
+}
+
+// DISPLAY MEMBERS
+function displayMembers(data) {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  data.forEach((m, i) => {
+    grid.innerHTML += `
+      <div class="card" onclick="openModal(${i})">
+        <img src="${m.photo}">
+        <div class="card-body">
+          <h3>${m.name}</h3>
+          <p class="small">${m.relation}</p>
+          <p class="small">${m.phone}</p>
+        </div>
+      </div>
+    `;
+  });
+}
+
+// SEARCH
+function searchMembers() {
+  const val = document.getElementById("searchBox").value.toLowerCase();
+  const filtered = members.filter(m =>
+    m.name.toLowerCase().includes(val) ||
+    m.relation.toLowerCase().includes(val)
+  );
+  displayMembers(filtered);
+}
+
+// MODAL
+function openModal(index) {
+  const m = members[index];
+  const modal = document.getElementById("modal");
+  const content = document.getElementById("modalContent");
+
+  content.innerHTML = `
+    <img src="${m.photo}">
+    <h3>${m.name}</h3>
+    <p>${m.phone}</p>
+    <p>${m.address}</p>
+    <p>${m.relation}</p>
+  `;
+
+  modal.style.display = "flex";
+}
+
+// CLOSE MODAL
+document.getElementById("modal").onclick = function() {
+  this.style.display = "none";
+};
+
+</script>
+
+</body>
+</html>
