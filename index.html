@@ -1,279 +1,183 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Family Directory</title>
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #0f172a, #1e293b);
-  color: white;
-}
-
-/* LOGIN */
-.login {
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.login-box {
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(20px);
-  padding: 30px;
-  border-radius: 20px;
-  width: 300px;
-  text-align: center;
-}
-
-input {
-  width: 100%;
-  padding: 12px;
-  margin-top: 15px;
-  border-radius: 10px;
-  border: none;
-  outline: none;
-}
-
-button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 15px;
-  border: none;
-  border-radius: 10px;
-  background: #3b82f6;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-/* APP */
-.app {
-  display: none;
-  padding: 20px;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.search {
-  width: 100%;
-  padding: 12px;
-  border-radius: 12px;
-  border: none;
-  margin-bottom: 20px;
-}
-
-/* GRID */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 20px;
-}
-
-/* CARD */
-.card {
-  background: rgba(255,255,255,0.05);
-  border-radius: 20px;
-  overflow: hidden;
-  transition: 0.3s;
-  cursor: pointer;
-}
-
-.card:hover {
-  transform: translateY(-8px) scale(1.02);
-}
-
-.card img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-}
-
-.card-body {
-  padding: 15px;
-}
-
-.card-body h3 {
-  margin-bottom: 5px;
-}
-
-.small {
-  color: #94a3b8;
-  font-size: 14px;
-}
-
-/* MODAL */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.7);
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-content {
-  background: #1e293b;
-  padding: 20px;
-  border-radius: 20px;
-  width: 300px;
-  text-align: center;
-}
-
-.modal img {
-  width: 100%;
-  border-radius: 15px;
-  margin-bottom: 10px;
-}
+body {margin:0;font-family:sans-serif;background:#0f172a;color:white;}
+.container{padding:15px;max-width:900px;margin:auto;}
+input,button{padding:10px;width:100%;margin-top:8px;border-radius:10px;border:none;}
+button{background:#3b82f6;color:white;font-weight:bold;}
+.card{background:#1e293b;padding:10px;margin-top:10px;border-radius:15px;}
+img{width:100%;border-radius:10px;}
+.row{display:flex;gap:10px;}
+.row button{flex:1;}
+.hidden{display:none;}
 </style>
 
 </head>
 
 <body>
 
-<!-- LOGIN -->
+<div class="container">
 
-<div class="login" id="loginPage">
-  <div class="login-box">
-    <h2>Family Access</h2>
-    <input type="password" id="password" placeholder="Enter Password">
-    <button onclick="login()">Login</button>
-  </div>
+<h2>🔐 Login</h2>
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+
+<hr>
+
+<h2>➕ Add / Edit Member</h2>
+<input id="name" placeholder="Name">
+<input id="phone" placeholder="Phone">
+<input id="address" placeholder="Address">
+<input id="relation" placeholder="Relation">
+<input type="file" id="photo">
+<button onclick="saveMember()">Save Member</button>
+
+<hr>
+
+<input id="search" placeholder="Search..." onkeyup="loadMembers()">
+
+<div id="list"></div>
+
 </div>
 
-<!-- APP -->
+<!-- Firebase -->
 
-<div class="app" id="appPage">
-  <div class="header">
-    <h2>Family Directory</h2>
-    <button onclick="logout()">Logout</button>
-  </div>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 
-  <input type="text" class="search" placeholder="Search family..." onkeyup="searchMembers()" id="searchBox">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
-  <div class="grid" id="grid"></div>
-</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-<!-- MODAL -->
-
-<div class="modal" id="modal">
-  <div class="modal-content" id="modalContent"></div>
-</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
 <script>
 
-// 🔐 PASSWORD
-const PASSWORD = "1234";
+// 🔥 REPLACE THIS WITH YOUR FIREBASE CONFIG
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_BUCKET",
+};
 
-// 📇 FAMILY DATA
-const members = [
-  {
-    name: "Nivin Varkey",
-    phone: "+971XXXXXXXX",
-    address: "Dubai",
-    relation: "Self",
-    photo: "https://via.placeholder.com/400"
-  },
-  {
-    name: "Anu Joseph",
-    phone: "+971111111",
-    address: "Abu Dhabi",
-    relation: "Cousin",
-    photo: "https://via.placeholder.com/400"
-  },
-  {
-    name: "Mathew Varkey",
-    phone: "+971222222",
-    address: "Sharjah",
-    relation: "Father",
-    photo: "https://via.placeholder.com/400"
-  }
-];
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+let editId = null;
 
 // LOGIN
-function login() {
-  const pass = document.getElementById("password").value;
-  if (pass === PASSWORD) {
-    document.getElementById("loginPage").style.display = "none";
-    document.getElementById("appPage").style.display = "block";
-    displayMembers(members);
-  } else {
-    alert("Wrong password");
+function login(){
+  auth.signInWithEmailAndPassword(email.value, password.value)
+  .then(()=>alert("Logged in"))
+  .catch(e=>alert(e.message));
+}
+
+// SAVE (ADD / EDIT)
+async function saveMember(){
+
+  let photoURL = "";
+
+  if(photo.files[0]){
+    const file = photo.files[0];
+    const ref = storage.ref("photos/" + Date.now() + file.name);
+    await ref.put(file);
+    photoURL = await ref.getDownloadURL();
   }
+
+  const data = {
+    name: name.value,
+    phone: phone.value,
+    address: address.value,
+    relation: relation.value,
+  };
+
+  if(photoURL) data.photo = photoURL;
+
+  if(editId){
+    await db.collection("members").doc(editId).update(data);
+    editId = null;
+  } else {
+    if(!data.photo) return alert("Photo required");
+    await db.collection("members").add(data);
+  }
+
+  clearForm();
+  loadMembers();
 }
 
-// LOGOUT
-function logout() {
-  location.reload();
-}
+// LOAD MEMBERS
+async function loadMembers(){
 
-// DISPLAY MEMBERS
-function displayMembers(data) {
-  const grid = document.getElementById("grid");
-  grid.innerHTML = "";
+  const searchVal = search.value.toLowerCase();
+  const snap = await db.collection("members").get();
 
-  data.forEach((m, i) => {
-    grid.innerHTML += `
-      <div class="card" onclick="openModal(${i})">
+  list.innerHTML = "";
+
+  snap.forEach(doc=>{
+    const m = doc.data();
+
+    if(!m.name.toLowerCase().includes(searchVal)) return;
+
+    list.innerHTML += `
+      <div class="card">
         <img src="${m.photo}">
-        <div class="card-body">
-          <h3>${m.name}</h3>
-          <p class="small">${m.relation}</p>
-          <p class="small">${m.phone}</p>
+        <h3>${m.name}</h3>
+        <p>${m.phone}</p>
+        <p>${m.address}</p>
+        <p>${m.relation}</p>
+
+        <div class="row">
+          <button onclick="editMember('${doc.id}','${m.name}','${m.phone}','${m.address}','${m.relation}')">Edit</button>
+          <button onclick="deleteMember('${doc.id}')">Delete</button>
         </div>
       </div>
     `;
   });
 }
 
-// SEARCH
-function searchMembers() {
-  const val = document.getElementById("searchBox").value.toLowerCase();
-  const filtered = members.filter(m =>
-    m.name.toLowerCase().includes(val) ||
-    m.relation.toLowerCase().includes(val)
-  );
-  displayMembers(filtered);
+// EDIT
+function editMember(id,nameVal,phoneVal,addressVal,relationVal){
+  editId = id;
+  name.value = nameVal;
+  phone.value = phoneVal;
+  address.value = addressVal;
+  relation.value = relationVal;
+  window.scrollTo(0,0);
 }
 
-// MODAL
-function openModal(index) {
-  const m = members[index];
-  const modal = document.getElementById("modal");
-  const content = document.getElementById("modalContent");
-
-  content.innerHTML = `
-    <img src="${m.photo}">
-    <h3>${m.name}</h3>
-    <p>${m.phone}</p>
-    <p>${m.address}</p>
-    <p>${m.relation}</p>
-  `;
-
-  modal.style.display = "flex";
+// DELETE
+function deleteMember(id){
+  if(confirm("Delete this member?")){
+    db.collection("members").doc(id).delete();
+    loadMembers();
+  }
 }
 
-// CLOSE MODAL
-document.getElementById("modal").onclick = function() {
-  this.style.display = "none";
-};
+// CLEAR FORM
+function clearForm(){
+  name.value="";
+  phone.value="";
+  address.value="";
+  relation.value="";
+  photo.value="";
+}
+
+// AUTH STATE
+auth.onAuthStateChanged(user=>{
+  if(user){
+    loadMembers();
+  }
+});
 
 </script>
 
